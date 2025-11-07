@@ -71,7 +71,7 @@ const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/finance-
 // Middleware
 // -----------------------------
 app.use(cors({
-  origin: ["https://vercel.com/saurabh-singhs-projects-98b1377c/siddhi-finance"],
+  origin: ["https://siddhi-finance.vercel.app/"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
