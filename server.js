@@ -13,7 +13,11 @@ const URI =
   "mongodb://saurabh07mahi:100Rabh07@ac-a2obg35-shard-00-00.54gw1ki.mongodb.net:27017,ac-a2obg35-shard-00-01.54gw1ki.mongodb.net:27017,ac-a2obg35-shard-00-02.54gw1ki.mongodb.net:27017/?replicaSet=atlas-l9fg23-shard-0&ssl=true&authSource=admin&retryWrites=true&w=majority&appName=Cluster0";
 
 // Middleware
-app.use(cors());
+
+app.use(cors({
+  origin: 'https://my-finance-ten.vercel.app', // Allow frontend
+  credentials: true
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 

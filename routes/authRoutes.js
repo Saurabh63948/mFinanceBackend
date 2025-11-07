@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 const Customer = require("../models/customerModel");
 
-
 const otpStore = new Map();
 const SECRET = process.env.JWT_SECRET || "SECRET_KEY";
 
@@ -17,6 +16,7 @@ router.post("/request-otp", async (req, res) => {
 
   try {
     const customer = await Customer.findOne({ name, mobileNumber });
+
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
@@ -24,13 +24,8 @@ router.post("/request-otp", async (req, res) => {
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     otpStore.set(mobileNumber, otp);
 
-    // Auto-expire OTP after 2 minutes
-    setTimeout(() => {
-      otpStore.delete(mobileNumber);
-    }, 2 * 60 * 1000);
-
     console.log(`🔐 OTP for ${mobileNumber}: ${otp}`);
-    res.json({ message: "OTP sent successfully", otp }); // only for dev
+    res.json({ message: "OTP sent successfully", otp }); // ⚠️ only for dev (send to frontend)
   } catch (error) {
     console.error("OTP request error:", error);
     res.status(500).json({ error: "Server error" });
@@ -47,11 +42,12 @@ router.post("/verify-otp", async (req, res) => {
 
   const storedOtp = otpStore.get(mobileNumber);
   if (!storedOtp || storedOtp !== otp) {
-    return res.status(401).json({ error: "Invalid OTP or expired" });
+    return res.status(401).json({ error: "Invalid OTP" });
   }
 
   try {
     const customer = await Customer.findOne({ name, mobileNumber });
+
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
@@ -74,7 +70,5 @@ router.post("/verify-otp", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
-// ✅ Protected route: Get customer by Aadhaar number
 
 module.exports = router;

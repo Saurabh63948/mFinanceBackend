@@ -18,7 +18,6 @@ router.post("/", async (req, res) => {
       aadhaarPhotoUrl,
       repaymentHistory = [],
       fines = [],
-      isHost = false, // ✅ ensure isHost flag is also passed/stored
     } = req.body;
 
     if (!name || !aadhaarNumber || !mobileNumber || !totalPayableAmount || !interestRatePercent) {
@@ -41,7 +40,6 @@ router.post("/", async (req, res) => {
       aadhaarPhotoUrl,
       repaymentHistory,
       fines,
-      isHost,
     });
 
     await newCustomer.save();
@@ -63,68 +61,74 @@ router.get("/", async (req, res) => {
 });
 
 // ✅ Add payment to a customer's account
-router.post("/:id/add-payment", async (req, res) => {
+router.post('/:id/add-payment', async (req, res) => {
   try {
-    const { amount, date } = req.body;
-    const paymentAmount = Number(amount);
-    const paymentDate = date ? new Date(date) : new Date();
-
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      return res.status(400).json({ message: "Invalid payment amount" });
-    }
-
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).json({ message: "Customer not found" });
+      return res.status(404).json({ message: 'Customer not found' });
     }
 
+    const { amount, date } = req.body;
+    const paymentAmount = Number(amount);
+
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid payment amount' });
+    }
+
+    const paymentDate = date ? new Date(date) : new Date();
+
+    // Add payment to repayment history
     customer.repaymentHistory.push({
       date: paymentDate.toISOString().split("T")[0],
       amountPaid: paymentAmount,
     });
 
+    // Update paid and remaining
     customer.paidAmount += paymentAmount;
     customer.remainingAmount = customer.totalPayableAmount - customer.paidAmount;
 
     await customer.save();
 
-    res.status(200).json({ message: "Payment added successfully", customer });
+    res.status(200).json({ message: 'Payment added successfully', customer });
   } catch (error) {
-    console.error("Payment error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Payment error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // ✅ Add late fee to a customer's account
-router.post("/:id/add-late-fee", async (req, res) => {
+router.post('/:id/add-late-fee', async (req, res) => {
   try {
-    const { amount, date } = req.body;
-    const lateFeeAmount = Number(amount);
-    const feeDate = date ? new Date(date) : new Date();
-
-    if (isNaN(lateFeeAmount) || lateFeeAmount <= 0) {
-      return res.status(400).json({ message: "Invalid late fee amount" });
-    }
-
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).json({ message: "Customer not found" });
+      return res.status(404).json({ message: 'Customer not found' });
     }
 
+    const { amount, date } = req.body;
+    const lateFeeAmount = Number(amount);
+
+    if (isNaN(lateFeeAmount) || lateFeeAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid late fee amount' });
+    }
+
+    const feeDate = date ? new Date(date) : new Date();
+
+    // Add to fines array
     customer.fines.push({
       date: feeDate.toISOString().split("T")[0],
       amount: lateFeeAmount,
     });
 
+    // Only update totalPayableAmount, then recalculate remaining
     customer.totalPayableAmount += lateFeeAmount;
     customer.remainingAmount = customer.totalPayableAmount - customer.paidAmount;
 
     await customer.save();
 
-    res.status(200).json({ message: "Late fee added successfully", customer });
+    res.status(200).json({ message: 'Late fee added successfully', customer });
   } catch (error) {
-    console.error("Late fee error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Late fee error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
